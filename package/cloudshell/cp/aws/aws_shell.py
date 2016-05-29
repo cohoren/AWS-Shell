@@ -2,18 +2,32 @@ import jsonpickle
 
 from cloudshell.cp.aws.common.deploy_data_holder import DeployDataHolder
 from cloudshell.cp.aws.device_access_layer.aws_api import AWSApi
+<<<<<<< feature/gil_8_create_port_group_attributes
 from cloudshell.cp.aws.domain.ami_managment.operations.deploy_operation import DeployAMIOperation
 from cloudshell.cp.aws.domain.common.aws_session_manager import AWSSessionManager
 from cloudshell.cp.aws.models.aws_ec2_cloud_provider_resource_model import AWSEc2CloudProviderResourceModel
 from cloudshell.cp.aws.models.deploy_aws_ec2_ami_instance_resource_model import DeployAWSEc2AMIInstanceResourceModel
+=======
+from cloudshell.cp.aws.domain.ami_management.operations.deploy_operation import DeployAMIOperation
+from cloudshell.cp.aws.domain.ami_management.operations.power_operation import PowerOperation
+from cloudshell.cp.aws.domain.services.model_parser.aws_model_parser import AWSModelsParser
+from cloudshell.cp.aws.domain.services.session_providers.aws_session_provider import AWSSessionProvider
+>>>>>>> local
 from cloudshell.cp.aws.models.deploy_result_model import DeployResult
 
 
 class AWSShell(object):
     def __init__(self):
         self.aws_api = AWSApi()
+<<<<<<< feature/gil_8_create_port_group_attributes
         self.credentials_manager = AWSSessionManager()
+=======
+        self.model_parser = AWSModelsParser()
+        self.cloudshell_session_helper = CloudshellDriverHelper()
+        self.aws_session_manager = AWSSessionProvider()
+>>>>>>> local
         self.deploy_ami_operation = DeployAMIOperation(self.aws_api)
+        self.power_management_operation = PowerOperation(self.aws_api)
 
     def deploy_ami(self, command_context, deployment_request):
         """
@@ -25,6 +39,7 @@ class AWSShell(object):
         :param aws_ec2_resource_model: The resource model on which the AMI will be deployed on
         :type aws_ec2_resource_model: cloudshell.cp.aws.models.aws_ec2_cloud_provider_resource_model.AWSEc2CloudProviderResourceModel
         """
+<<<<<<< feature/gil_8_create_port_group_attributes
 
         aws_ami_deployment_model, name = self._convert_to_deployment_resource_model(deployment_request)
         aws_ec2_resource_model = self.convert_to_aws_resource_model(command_context)
@@ -32,6 +47,18 @@ class AWSShell(object):
         access_key_id, secret_access_key = self.credentials_manager.get_credentials()
         ec2_session = self.aws_api.create_ec2_session(access_key_id, secret_access_key, aws_ec2_resource_model.region)
         result, name = self.deploy_ami_operation.deploy(ec2_session, name, aws_ec2_resource_model,
+=======
+        aws_ami_deployment_model, name = self.model_parser.convert_to_deployment_resource_model(deployment_request)
+        aws_ec2_resource_model = self.model_parser.convert_to_aws_resource_model(command_context.resource)
+        cloudshell_session = self.cloudshell_session_helper.get_session(command_context.connectivity.server_address,
+                                                                        command_context.connectivity.admin_auth_token,
+                                                                        command_context.reservation.domain)
+        ec2_session = self.aws_session_manager.get_ec2_session(cloudshell_session, aws_ec2_resource_model)
+
+        result, name = self.deploy_ami_operation.deploy(ec2_session,
+                                                        name,
+                                                        aws_ec2_resource_model,
+>>>>>>> local
                                                         aws_ami_deployment_model)
 
         deploy_data = DeployResult(vm_name=name,
@@ -45,6 +72,42 @@ class AWSShell(object):
 
         return self._set_command_result(deploy_data)
 
+    def power_on_ami(self, command_context):
+        """
+        Will power on the ami
+        :param command_context: RemoteCommandContext
+        :return:
+        """
+        aws_ec2_resource_model = self.model_parser.convert_to_aws_resource_model(command_context.resource)
+        cloudshell_session = self.cloudshell_session_helper.get_session(command_context.connectivity.server_address,
+                                                                        command_context.connectivity.admin_auth_token,
+                                                                        command_context.remote_reservation.domain)
+        ec2_session = self.aws_session_manager.get_ec2_session(cloudshell_session, aws_ec2_resource_model)
+
+        resource = command_context.remote_endpoints[0]
+        data_holder = self.model_parser.convert_app_resource_to_deployed_app(resource)
+        result = self.power_management_operation.power_on(ec2_session, data_holder.vmdetails.uid)
+        cloudshell_session.SetResourceLiveStatus(resource.fullname, "Online", "Active")
+        return self._set_command_result(result)
+
+    def power_off_ami(self, command_context):
+        """
+        Will power on the ami
+        :param command_context: RemoteCommandContext
+        :return:
+        """
+        aws_ec2_resource_model = self.model_parser.convert_to_aws_resource_model(command_context.resource)
+        cloudshell_session = self.cloudshell_session_helper.get_session(command_context.connectivity.server_address,
+                                                                        command_context.connectivity.admin_auth_token,
+                                                                        command_context.reservation.domain)
+        ec2_session = self.aws_session_manager.get_ec2_session(cloudshell_session, aws_ec2_resource_model)
+
+        resource = command_context.remote_endpoints[0]
+        data_holder = self.model_parser.convert_app_resource_to_deployed_app(resource)
+        result = self.power_management_operation.power_on(ec2_session, data_holder.vmdetails.uid)
+        cloudshell_session.SetResourceLiveStatus(resource.fullname, "Offline", "Powered Off")
+        return self._set_command_result(result)
+
     def _set_command_result(self, result, unpicklable=False):
         """
         Serializes output as JSON and writes it to console output wrapped with special prefix and suffix
@@ -54,7 +117,6 @@ class AWSShell(object):
         """
         json = jsonpickle.encode(result, unpicklable=unpicklable)
         result_for_output = str(json)
-        print result_for_output
         return result_for_output
 
     def convert_to_aws_resource_model(self, command_context):
