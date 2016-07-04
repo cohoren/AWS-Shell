@@ -16,7 +16,7 @@ class TestDeployedAppPortsOperation(TestCase):
         dict = jsonpickle.decode(json_str)
         vmdetails = DeployDataHolder(dict)
 
-        result = self.operation.get_formated_deployed_app_ports(vmdetails.vmCustomParams)
+        result = self.operation.get_formatted_deployed_app_ports(vmdetails.vmCustomParams)
 
         self.assertEqual(result, 'Inbound ports:\nPort 80 tcp')
 
@@ -25,7 +25,7 @@ class TestDeployedAppPortsOperation(TestCase):
         dict = jsonpickle.decode(json_str)
         vmdetails = DeployDataHolder(dict)
 
-        result = self.operation.get_formated_deployed_app_ports(vmdetails.vmCustomParams)
+        result = self.operation.get_formatted_deployed_app_ports(vmdetails.vmCustomParams)
 
         self.assertEqual(result, 'Inbound ports:\nPort 80 tcp\nPorts 1200-2300 udp\nPort 26 tcp')
 
@@ -34,7 +34,7 @@ class TestDeployedAppPortsOperation(TestCase):
         dict = jsonpickle.decode(json_str)
         vmdetails = DeployDataHolder(dict)
 
-        result = self.operation.get_formated_deployed_app_ports(vmdetails.vmCustomParams)
+        result = self.operation.get_formatted_deployed_app_ports(vmdetails.vmCustomParams)
 
         self.assertEqual(result, 'Outbound ports:\nPort 80 tcp')
 
@@ -43,7 +43,7 @@ class TestDeployedAppPortsOperation(TestCase):
         dict = jsonpickle.decode(json_str)
         vmdetails = DeployDataHolder(dict)
 
-        result = self.operation.get_formated_deployed_app_ports(vmdetails.vmCustomParams)
+        result = self.operation.get_formatted_deployed_app_ports(vmdetails.vmCustomParams)
 
         self.assertEqual(result, 'Outbound ports:\nPort 80 tcp\nPorts 1200-2300 udp\nPort 26 tcp')
 
@@ -54,7 +54,7 @@ class TestDeployedAppPortsOperation(TestCase):
         dict = jsonpickle.decode(json_str)
         vmdetails = DeployDataHolder(dict)
 
-        result = self.operation.get_formated_deployed_app_ports(vmdetails.vmCustomParams)
+        result = self.operation.get_formatted_deployed_app_ports(vmdetails.vmCustomParams)
 
         self.assertEqual(result,
                          'Inbound ports:\nPort 80 tcp\nPorts 1200-2300 udp\nPort 26 tcp\n\n'

@@ -13,17 +13,23 @@ class AWSSessionProvider(object):
         if not os.path.isfile(self.test_cred_path):
             self.test_cred_path = ''
 
-    def get_s3_session(self, cloudshell_session, aws_ec2_data_model):
+    def get_s3_session(self, logger, cloudshell_session, aws_ec2_data_model):
+        logger.info('getting ec2 session instance')
+        logger.info('connecting to aws console')
         aws_session = self._get_aws_session(aws_ec2_data_model, cloudshell_session)
 
         if not aws_session:
+            logger.error('Could not create AWS Session')
             raise ValueError('Could not create AWS Session')
         return aws_session.resource(self.S3)
 
-    def get_ec2_session(self, cloudshell_session, aws_ec2_data_model):
+    def get_ec2_session(self, logger, cloudshell_session, aws_ec2_data_model):
+        logger.info('getting ec2 session instance')
+        logger.info('connecting to aws console')
         aws_session = self._get_aws_session(aws_ec2_data_model, cloudshell_session)
 
         if not aws_session:
+            logger.error('Could not create AWS Session')
             raise ValueError('Could not create AWS Session')
         return aws_session.resource(self.EC2)
 

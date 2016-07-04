@@ -22,10 +22,12 @@ class PrepareConnectivityOperation(object):
         self.key_pair_service = key_pair_service
         self.tag_service = tag_service
 
-    def prepare_connectivity(self, ec2_session, s3_session, reservation_id, aws_ec2_datamodel, request):
+    def prepare_connectivity(self, logger, ec2_session, s3_session, reservation_id, aws_ec2_datamodel, request):
         """
         Will create a vpc for the reservation and will peer it to the management vpc
         also will create a key pair for that reservation
+        :param logger: Logger
+        :type logger: logging.Logger
         :param ec2_session: EC2 Session
         :param s3_session: S3 Session
         :param reservation_id: The reservation ID
@@ -35,21 +37,29 @@ class PrepareConnectivityOperation(object):
         :param request: Parsed prepare connectivity request
         :return:
         """
+
         if not aws_ec2_datamodel.management_vpc_id:
+            logger.error('Management VPC ID must be set!')
             raise ValueError('Management VPC ID must be set!')
 
+        logger.info('Loading or creating key par for reservation: {0}'. format(reservation_id))
         self._create_key_pair(ec2_session=ec2_session,
                               s3_session=s3_session ,
                               bucket=aws_ec2_datamodel.key_pairs_location,
                               reservation_id=reservation_id)
+
+        logger.info('preparing actions')
         results = []
         for action in request.actions:
             try:
                 # will get or create a vpc for the reservation
+                logger.info('Getting or loading vpc for reservation: {0}'.format(reservation_id))
                 vpc = self._get_or_create_vpc(action, ec2_session, reservation_id)
 
+                logger.info('Peering the management VPC and the vpc of the reservation ({0})'.format(reservation_id))
                 self._peer_vpcs(ec2_session, aws_ec2_datamodel.management_vpc_id, vpc.id)
 
+                logger.info('Adding the default security group for reservation: {0}'.format(reservation_id))
                 security_group = self._get_or_create_security_group(ec2_session=ec2_session,
                                                                     reservation_id=reservation_id,
                                                                     vpc=vpc,
@@ -58,6 +68,8 @@ class PrepareConnectivityOperation(object):
                 results.append(self._create_action_result(action, security_group, vpc))
 
             except Exception as e:
+                logger.error('exception occurred while preparing connectivity '
+                             'for the reservation: {0}, with the error: {1}'.format(reservation_id, e))
                 results.append(self._create_fault_action_result(action, e))
         return results
 

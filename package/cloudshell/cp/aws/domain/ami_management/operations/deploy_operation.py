@@ -35,8 +35,11 @@ class DeployAMIOperation(object):
         self.key_pair_service = key_pair_service
         self.subnet_serivce = subnet_service
 
-    def deploy(self, ec2_session, s3_session, name, reservation_id, aws_ec2_cp_resource_model, ami_deployment_model):
+    def deploy(self, logger, ec2_session, s3_session, name, reservation_id, aws_ec2_cp_resource_model, ami_deployment_model):
         """
+        Will deploy an AMI
+        :param logger: Logger
+        :type logger: logging.Logger
         :param ec2_session: EC2 session
         :param s3_session: S3 Session
         :param name: The name of the deployed ami
@@ -49,36 +52,41 @@ class DeployAMIOperation(object):
         :type ami_deployment_model: cloudshell.cp.aws.models.deploy_aws_ec2_ami_instance_resource_model.DeployAWSEc2AMIInstanceResourceModel
         :return:
         """
-
+        logger.info('Getting VPC for the reservation: {0}'.format(reservation_id))
         vpc = self.vpc_service.find_vpc_for_reservation(ec2_session=ec2_session, reservation_id=reservation_id)
         if not vpc:
+            logger.error('VPC not found for the reservation: {0}'.format(reservation_id))
             raise ValueError('VPC is not set for this reservation')
 
         key_name = self.key_pair_service.get_reservation_key_name(reservation_id=reservation_id)
+        logger.info('Setting AMI with the key pair: {0}'.format(key_name))
 
+        logger.info('Creating default security group for the AMI')
         security_group = self._create_security_group_for_instance(ami_deployment_model=ami_deployment_model,
                                                                   ec2_session=ec2_session,
                                                                   reservation_id=reservation_id,
                                                                   vpc=vpc)
 
+        logger.info('Creating the deployment command')
         ami_deployment_info = self._create_deployment_parameters(aws_ec2_resource_model=aws_ec2_cp_resource_model,
                                                                  ami_deployment_model=ami_deployment_model,
                                                                  vpc=vpc,
                                                                  security_group=security_group,
                                                                  key_pair=key_name,
                                                                  reservation_id=reservation_id)
-
+        logger.info('Creating the deployment command')
         instance = self.instance_service.create_instance(ec2_session=ec2_session,
                                                          name=name,
                                                          reservation_id=reservation_id,
                                                          ami_deployment_info=ami_deployment_info)
 
+        logger.info('Deploying ami')
         ami_credentials = self._get_ami_credentials(key_pair_location=aws_ec2_cp_resource_model.key_pairs_location,
                                                     wait_for_credentials=ami_deployment_model.wait_for_credentials,
                                                     instance=instance,
                                                     reservation_id=reservation_id,
                                                     s3_session=s3_session)
-
+        logger.info('AMI deployed')
         return DeployResult(vm_name=self._get_name_from_tags(instance),
                             vm_uuid=instance.instance_id,
                             cloud_provider_resource_name=ami_deployment_model.cloud_provider_resource,
