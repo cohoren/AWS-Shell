@@ -57,6 +57,7 @@ class InstanceService(object):
         return instance
 
     def wait_for_instance_to_run_in_aws(self, ec2_client, instance, wait_for_status_check,logger):
+        logger.info("Waiting for Instance to run in AWS.")
         if wait_for_status_check:
             try:
                 ec2_client.get_waiter('instance_status_ok') \
