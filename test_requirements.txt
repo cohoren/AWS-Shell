@@ -6,3 +6,7 @@ teamcity-messages
 jsonpickle
 nose-exclude
 coveralls
+
+
+
+1.0.5
