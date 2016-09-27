@@ -32,3 +32,7 @@ setup(
         ], requires=['jsonpickle']
 
 )
+
+
+
+# realease try 1.0.8
